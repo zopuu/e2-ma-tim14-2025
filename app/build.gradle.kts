@@ -64,4 +64,6 @@ dependencies {
     // --- Navigation komponenta (Fragments + NavUI) ---
     implementation("androidx.navigation:navigation-fragment:2.9.3")
     implementation("androidx.navigation:navigation-ui:2.9.3")
+
 }
+//apply plugin: "com.google.gms.google-services"
