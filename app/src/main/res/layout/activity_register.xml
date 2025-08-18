@@ -11,7 +11,21 @@
                 android:layout_width="match_parent" android:layout_height="wrap_content"/>
             <EditText android:id="@+id/etUsername" android:hint="Username"
                 android:layout_width="match_parent" android:layout_height="wrap_content"/>
-            <Spinner android:id="@+id/spAvatar" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+            <TextView
+                android:id="@+id/tvAvatarLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Choose your avatar"
+                android:textStyle="bold"
+                android:layout_marginTop="8dp"/>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvAvatars"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:minHeight="96dp"/>
+
             <EditText android:id="@+id/etPassword" android:hint="Password" android:inputType="textPassword"
                 android:layout_width="match_parent" android:layout_height="wrap_content"/>
             <EditText android:id="@+id/etConfirm" android:hint="Confirm password" android:inputType="textPassword"
