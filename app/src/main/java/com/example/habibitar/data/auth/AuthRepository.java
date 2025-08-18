@@ -29,6 +29,11 @@ public class AuthRepository {
 
                      //Save profile
                      UserProfile profile = new UserProfile(uid,email,username,avatarKey,sentAt);
+                     profile.qrPayload = "user:" + uid;
+                     profile.badges = new java.util.ArrayList<>();
+                     profile.equipment = new java.util.ArrayList<>();
+                     profile.currentEquipment = null;
+
                      db.collection("users").document(uid).set(profile.toMap())
                              .addOnSuccessListener(unused -> {
                                  sendEmailVerification()
