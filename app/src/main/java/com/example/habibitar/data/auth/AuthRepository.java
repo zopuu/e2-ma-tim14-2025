@@ -34,7 +34,11 @@ public class AuthRepository {
                      profile.equipment = new java.util.ArrayList<>();
                      profile.currentEquipment = null;
 
-                     db.collection("users").document(uid).set(profile.toMap())
+                     java.util.Map<String, Object> data = new java.util.HashMap<>(profile.toMap());
+                     data.put("username_lower", username == null ? null : username.toLowerCase());
+
+                     // Write to /users/{uid}
+                     db.collection("users").document(uid).set(data)
                              .addOnSuccessListener(unused -> {
                                  sendEmailVerification()
                                          .thenAccept(future::complete)
