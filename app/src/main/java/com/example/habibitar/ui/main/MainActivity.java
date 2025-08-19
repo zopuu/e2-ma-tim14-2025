@@ -138,6 +138,10 @@ public class MainActivity extends AppCompatActivity implements com.google.androi
         if (id == R.id.nav_friends) {
             startActivity(new Intent(this, com.example.habibitar.ui.friends.FriendsActivity.class));
         }
+        if (id == R.id.nav_alliance) {
+            startActivity(new Intent(this, com.example.habibitar.ui.alliance.AllianceActivity.class));
+        }
+
         // Close drawer after click
         androidx.drawerlayout.widget.DrawerLayout drawer = findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);

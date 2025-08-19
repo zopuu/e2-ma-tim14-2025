@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        app:title="Alliance"
+        app:navigationIcon="?attr/homeAsUpIndicator"/>
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="?attr/actionBarSize"
+        android:padding="16dp">
+
+        <!-- Placeholder for alliance chat entry -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnOpenChat"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Open alliance chat (coming soon)"
+            android:enabled="false"/>
+
+        <ProgressBar
+            android:id="@+id/progress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="8dp"
+            android:visibility="gone"/>
+
+        <!-- Not in alliance state -->
+        <LinearLayout
+            android:id="@+id/groupNoAlliance"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:layout_marginTop="24dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="You are not part of any alliance yet."/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCreateAlliance"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="Create alliance"/>
+        </LinearLayout>
+
+        <!-- In alliance state -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/groupAlliance"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            app:cardCornerRadius="16dp"
+            android:layout_marginTop="24dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:id="@+id/tvAllianceName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Alliance name"
+                    android:textStyle="bold"
+                    android:textSize="18sp"/>
+
+                <TextView
+                    android:id="@+id/tvAllianceOwner"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Leader: "/>
+
+                <TextView
+                    android:id="@+id/tvMembersCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Members: 1"/>
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnDisband"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Disband"
+                    android:layout_marginTop="12dp"
+                    android:visibility="gone"/>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnLeave"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Leave"
+                    android:layout_marginTop="8dp"
+                    android:visibility="gone"/>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+    </LinearLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
