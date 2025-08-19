@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.CAMERA" />
 
     <application
         android:allowBackup="true"
@@ -35,6 +36,12 @@
             android:exported="false"
             android:label="Profile"/>
         <activity android:name=".ui.friends.FriendsActivity" />
+        <activity
+            android:name=".ui.qr.QRScanActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"/>
+
 
     </application>
 

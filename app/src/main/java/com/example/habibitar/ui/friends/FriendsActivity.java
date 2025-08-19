@@ -8,7 +8,10 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -32,6 +35,13 @@ public class FriendsActivity extends AppCompatActivity {
     private FriendsAdapter adapter;
     private View tvEmpty;
     private TextInputEditText etSearch;
+    private final ActivityResultLauncher<Intent> scanQrLauncher =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+                if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                    String payload = result.getData().getStringExtra(com.example.habibitar.ui.qr.QRScanActivity.EXTRA_QR_PAYLOAD);
+                    handleAddFriendFromQr(payload);
+                }
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,14 +84,11 @@ public class FriendsActivity extends AppCompatActivity {
         // Open modal add friend (search remote users + add)
         btnAdd.setOnClickListener(v -> openAddFriendSheet());
 
-        // Start QR flow (stub)
         btnScanQR.setOnClickListener(v -> {
-            // TODO: integrate ZXing. For now, show a toast-like lightweight sheet.
-            BottomSheetDialog b = new BottomSheetDialog(this);
-            View content = LayoutInflater.from(this).inflate(R.layout.sheet_qr_stub, null, false);
-            b.setContentView(content);
-            b.show();
+            Intent i = new Intent(this, com.example.habibitar.ui.qr.QRScanActivity.class);
+            scanQrLauncher.launch(i);
         });
+
     }
 
     // keep original list so filter is client-side
@@ -166,10 +173,10 @@ public class FriendsActivity extends AppCompatActivity {
         });
 
         btnScanQR.setOnClickListener(v -> {
-            // TODO: integrate ZXing scanner here and parse user UID from QR
-            tvNoResults.setText("QR scanner coming soon.");
-            tvNoResults.setVisibility(View.VISIBLE);
+            Intent i = new Intent(this, com.example.habibitar.ui.qr.QRScanActivity.class);
+            scanQrLauncher.launch(i);
         });
+
 
         sheet.show();
     }
@@ -178,4 +185,38 @@ public class FriendsActivity extends AppCompatActivity {
         // optional: you can add a small progress bar at toolbar level
         // or disable inputs while loading. For simplicity, no global spinner here.
     }
+    private void handleAddFriendFromQr(String payload) {
+        String uid = com.example.habibitar.util.QRParse.tryGetUidFromPayload(payload);
+        if (uid == null) {
+            Toast.makeText(this, "Invalid QR", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Optional: self-add guard
+        String me = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser() != null
+                ? com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser().getUid()
+                : null;
+        if (me != null && me.equals(uid)) {
+            Toast.makeText(this, "That's your own QR.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Call the repo to add friend; then refresh list
+        repo.addFriend(uid).thenAccept(ok ->
+                runOnUiThread(() -> {
+                    if (ok) {
+                        Toast.makeText(this, "Friend added!", Toast.LENGTH_SHORT).show();
+                        loadFriends(); // refresh your list
+                    } else {
+                        Toast.makeText(this, "Failed to add.", Toast.LENGTH_SHORT).show();
+                    }
+                })
+        ).exceptionally(ex -> {
+            runOnUiThread(() ->
+                    Toast.makeText(this, "Error: " + ex.getMessage(), Toast.LENGTH_LONG).show()
+            );
+            return null;
+        });
+    }
+
 }
