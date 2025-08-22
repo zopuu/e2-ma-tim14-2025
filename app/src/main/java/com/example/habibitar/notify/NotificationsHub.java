@@ -109,6 +109,7 @@ public class NotificationsHub {
         acceptsReg = db.collection("users").document(uid)
                 .collection("notifications")
                 .whereEqualTo("type", "alliance_accept")
+                .whereEqualTo("delivered", false)
                 .addSnapshotListener((snap, err) -> {
                     if (err != null || snap == null) return;
                     for (DocumentChange ch : snap.getDocumentChanges()) {
@@ -123,6 +124,11 @@ public class NotificationsHub {
                         if (alliance == null || alliance.isEmpty()) alliance = "your alliance";
 
                         showAllianceAcceptNotification(id, who, alliance);
+
+                        ch.getDocument().getReference().update(
+                                "delivered", true,
+                                "deliveredAt", com.google.firebase.firestore.FieldValue.serverTimestamp()
+                        );
                     }
                 });
     }

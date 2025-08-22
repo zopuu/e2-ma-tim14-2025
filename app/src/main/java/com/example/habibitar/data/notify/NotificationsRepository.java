@@ -164,7 +164,8 @@ public class NotificationsRepository {
                             put("allianceId", allianceId);
                             put("allianceName", allianceName);
                             put("createdAt", FieldValue.serverTimestamp());
-                            put("pending", false);             // informational
+                            put("pending", false);
+                            put("delivered", false);
                         }}, SetOptions.merge())
                         .addOnSuccessListener(u -> f.complete(null))
                         .addOnFailureListener(f::completeExceptionally);
