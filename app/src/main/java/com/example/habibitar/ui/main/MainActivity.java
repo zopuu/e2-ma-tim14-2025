@@ -60,23 +60,6 @@ public class MainActivity extends AppCompatActivity implements com.google.androi
             nm.createNotificationChannel(ch);
         }
     }
-    private final ActivityResultLauncher<String> notifPermLauncher =
-            registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
-                // Start the Firestore listener only after we have permission
-                if (granted) startInviteListener();
-            });
-
-    private void ensureNotificationsPermissionThenStart() {
-        if (Build.VERSION.SDK_INT >= 33) {
-            if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
-                    != PackageManager.PERMISSION_GRANTED) {
-                notifPermLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
-                return;
-            }
-        }
-        // <33 or already granted
-        startInviteListener();
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -191,107 +174,34 @@ public class MainActivity extends AppCompatActivity implements com.google.androi
     }
     @Override protected void onResume() {
         super.onResume();
-        ensureInviteChannel();
-        ensureEventsChannel();
-        ensureNotificationsPermissionThenStart();
-        startInviteListener();
-        startAcceptListener();
+
+        if (Build.VERSION.SDK_INT >= 33 && !hasNotifPermission()) {
+            notifPermLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+        } else {
+            // We either have it or don’t need it
+            com.example.habibitar.notify.NotificationsHub.get()
+                    .setNotificationsEnabled(true);
+        }
     }
+
+    // When the user responds to the permission prompt:
+    private final ActivityResultLauncher<String> notifPermLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
+                com.example.habibitar.notify.NotificationsHub.get()
+                        .setNotificationsEnabled(granted || Build.VERSION.SDK_INT < 33);
+            });
+
 
     @Override protected void onPause() {
         super.onPause();
         if (invitesReg != null) { invitesReg.remove(); invitesReg = null; }
         if (acceptsReg != null) { acceptsReg.remove(); acceptsReg = null; }
     }
-
-    private void startInviteListener() {
-        String me = com.google.firebase.auth.FirebaseAuth.getInstance().getUid();
-        if (me == null) return;
-
-        com.google.firebase.firestore.FirebaseFirestore db = com.google.firebase.firestore.FirebaseFirestore.getInstance();
-        invitesReg = db.collection("users").document(me)
-                .collection("notifications")
-                .whereEqualTo("type", "alliance_invite")
-                .whereEqualTo("pending", true)
-                .addSnapshotListener((snap, err) -> {
-                    if (err != null || snap == null) return;
-                    for (com.google.firebase.firestore.DocumentChange ch : snap.getDocumentChanges()) {
-                        if (ch.getType() == com.google.firebase.firestore.DocumentChange.Type.ADDED) {
-                            com.google.firebase.firestore.DocumentSnapshot d = ch.getDocument();
-                            com.example.habibitar.notify.InviteForegroundService.start(
-                                    getApplicationContext(),
-                                    d.getId(),
-                                    d.getString("allianceId"),
-                                    d.getString("allianceName"),
-                                    d.getString("fromUid"));
-
-                        }
-                    }
-                });
-    }
-    private void ensureEventsChannel() {
-        if (android.os.Build.VERSION.SDK_INT >= 26) {
-            android.app.NotificationChannel ch = new android.app.NotificationChannel(
-                    CH_EVENTS, "Alliance events", android.app.NotificationManager.IMPORTANCE_DEFAULT);
-            ch.setDescription("Notifications when members accept your invites");
-            getSystemService(android.app.NotificationManager.class).createNotificationChannel(ch);
-        }
-    }
-    private void startAcceptListener() {
-        String me = com.google.firebase.auth.FirebaseAuth.getInstance().getUid();
-        if (me == null) return;
-
-        com.google.firebase.firestore.FirebaseFirestore db = com.google.firebase.firestore.FirebaseFirestore.getInstance();
-        if (acceptsReg != null) acceptsReg.remove();
-
-        acceptsReg = db.collection("users").document(me)
-                .collection("notifications")
-                .whereEqualTo("type", "alliance_accept")
-                .addSnapshotListener((snap, err) -> {
-                    if (err != null || snap == null) return;
-
-                    for (com.google.firebase.firestore.DocumentChange ch : snap.getDocumentChanges()) {
-                        if (ch.getType() != com.google.firebase.firestore.DocumentChange.Type.ADDED) continue;
-
-                        com.google.firebase.firestore.DocumentSnapshot d = ch.getDocument();
-                        String id = d.getId();
-                        if (shownAcceptIds.contains(id)) continue; // de-dupe while app is alive
-                        shownAcceptIds.add(id);
-
-                        String who = d.getString("byUsername");
-                        if (who == null || who.isEmpty()) who = d.getString("byUid");
-                        String alliance = d.getString("allianceName");
-                        if (alliance == null || alliance.isEmpty()) alliance = "your alliance";
-
-                        showAllianceAcceptNotification(id, who, alliance);
-                    }
-                });
+    private boolean hasNotifPermission() {
+        return Build.VERSION.SDK_INT < 33
+                || checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED;
     }
 
-    private void showAllianceAcceptNotification(String docId, String who, String allianceName) {
-        int nid = ("accept_" + docId).hashCode();
-
-        // (optional) open Alliance screen on tap
-        Intent openAlliance = new Intent(this, com.example.habibitar.ui.alliance.AllianceActivity.class);
-        android.app.PendingIntent contentPi = android.app.PendingIntent.getActivity(
-                this, nid, openAlliance,
-                (android.os.Build.VERSION.SDK_INT >= 23)
-                        ? android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE
-                        : android.app.PendingIntent.FLAG_UPDATE_CURRENT);
-
-        androidx.core.app.NotificationCompat.Builder b =
-                new androidx.core.app.NotificationCompat.Builder(this, CH_EVENTS)
-                        .setSmallIcon(R.drawable.ic_groups_24)
-                        .setContentTitle("Invite accepted")
-                        .setContentText(who + " joined " + allianceName)
-                        .setPriority(androidx.core.app.NotificationCompat.PRIORITY_DEFAULT)
-                        .setAutoCancel(true)
-                        .setContentIntent(contentPi);
-
-        android.app.NotificationManager nm =
-                (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        nm.notify(nid, b.build());
-    }
 
 
 }
