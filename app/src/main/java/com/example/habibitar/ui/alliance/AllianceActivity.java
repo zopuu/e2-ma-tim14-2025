@@ -28,6 +28,7 @@ public class AllianceActivity extends AppCompatActivity {
     private @Nullable String currentAllianceId;
     private MaterialButton btnOpenChat; // placeholder
     private MaterialButton btnDisband, btnLeave;
+    private MaterialButton btnShowMembers;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -47,11 +48,17 @@ public class AllianceActivity extends AppCompatActivity {
         btnOpenChat     = findViewById(R.id.btnOpenChat);
         btnDisband = findViewById(R.id.btnDisband);
         btnLeave   = findViewById(R.id.btnLeave);
+        btnShowMembers = findViewById(R.id.btnShowMembers);
 
         findViewById(R.id.btnCreateAlliance).setOnClickListener(v -> openCreateAllianceSheet());
         btnOpenChat.setOnClickListener(v -> {
             // Placeholder for 7.2
             // TODO: start AllianceChatActivity with allianceId
+        });
+        btnShowMembers.setOnClickListener(v-> {
+            if(currentAllianceId == null) return;
+            AllianceMembersSheet.newInstance(currentAllianceId)
+                    .show(getSupportFragmentManager(), "members");
         });
         btnDisband.setOnClickListener(v -> {
             if (currentAllianceId == null) return;

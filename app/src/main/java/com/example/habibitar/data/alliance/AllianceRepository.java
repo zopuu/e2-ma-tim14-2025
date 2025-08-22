@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.example.habibitar.domain.model.Alliance;
+import com.example.habibitar.domain.model.AllianceMember;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentReference;
@@ -199,6 +200,54 @@ public class AllianceRepository {
         }).addOnFailureListener(future::completeExceptionally);
 
         return future;
+    }
+    public CompletableFuture<List<AllianceMember>>
+    loadMembers(String allianceId) {
+        CompletableFuture<List<AllianceMember>> f = new CompletableFuture<>();
+        DocumentReference aRef = db.collection("alliances").document(allianceId);
+
+        aRef.collection("members").get().addOnSuccessListener(memberSnaps -> {
+            List<CompletableFuture<AllianceMember>> perMember = new ArrayList<>();
+
+            for (com.google.firebase.firestore.DocumentSnapshot m : memberSnaps) {
+                String uid = m.getId();
+                String role = m.getString("role") != null ? m.getString("role") : "member";
+                com.google.firebase.Timestamp ts = m.getTimestamp("joinedAt");
+                long joinedAt = ts != null ? ts.toDate().getTime() : 0L;
+
+                CompletableFuture<AllianceMember> one = new CompletableFuture<>();
+                db.collection("users").document(uid).get()
+                        .addOnSuccessListener(userDoc -> {
+                            String username = userDoc.getString("username");
+                            if (username == null || username.isEmpty()) username = uid;
+                            String avatarKey = userDoc.getString("avatarKey"); // you already store this in profile
+                            one.complete(new AllianceMember(uid, username, avatarKey, role, joinedAt));
+                        })
+                        .addOnFailureListener(one::completeExceptionally);
+                perMember.add(one);
+            }
+
+            CompletableFuture
+                    .allOf(perMember.toArray(new CompletableFuture[0]))
+                    .thenAccept(v -> {
+                        List<AllianceMember> list = new ArrayList<>();
+                        for (var pm : perMember) {
+                            try { list.add(pm.get()); } catch (Exception ignored) {}
+                        }
+                        // Leader first, then by username
+                        list.sort((a, b) -> {
+                            int ra = "leader".equals(a.role) ? 0 : 1;
+                            int rb = "leader".equals(b.role) ? 0 : 1;
+                            if (ra != rb) return Integer.compare(ra, rb);
+                            return a.username.compareToIgnoreCase(b.username);
+                        });
+                        f.complete(list);
+                    })
+                    .exceptionally(ex -> { f.completeExceptionally(ex); return null; });
+
+        }).addOnFailureListener(f::completeExceptionally);
+
+        return f;
     }
 
 }

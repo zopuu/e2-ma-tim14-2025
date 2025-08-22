@@ -19,13 +19,7 @@
         android:layout_marginTop="?attr/actionBarSize"
         android:padding="16dp">
 
-        <!-- Placeholder for alliance chat entry -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnOpenChat"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Open alliance chat (coming soon)"
-            android:enabled="false"/>
+
 
         <ProgressBar
             android:id="@+id/progress"
@@ -109,5 +103,19 @@
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
+        <!-- Placeholder for alliance chat entry -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnOpenChat"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Open alliance chat (coming soon)"
+            android:enabled="false"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnShowMembers"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Show members"
+            android:layout_marginTop="8dp"/>
     </LinearLayout>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

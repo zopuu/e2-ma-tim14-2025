@@ -53,6 +53,8 @@
             android:screenOrientation="portrait"
             android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"/>
         <activity android:name=".ui.alliance.AllianceActivity" />
+
+
         <receiver
             android:name=".notify.AllianceInviteActionReceiver"
             android:exported="false" />
