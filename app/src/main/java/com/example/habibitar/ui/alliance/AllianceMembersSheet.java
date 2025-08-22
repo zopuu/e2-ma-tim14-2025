@@ -1,5 +1,6 @@
 package com.example.habibitar.ui.alliance;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,6 +11,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.habibitar.R;
 import com.example.habibitar.data.alliance.AllianceRepository;
@@ -40,13 +42,18 @@ public class AllianceMembersSheet extends BottomSheetDialogFragment {
         String aid = getArguments() != null ? getArguments().getString(ARG_AID) : null;
         if (aid == null) { dismissAllowingStateLoss(); return; }
 
-        TextView tvTitle = v.findViewById(R.id.tvTitle);
-        ProgressBar progress = v.findViewById(R.id.progress);
         TextView tvEmpty = v.findViewById(R.id.tvEmpty);
-        androidx.recyclerview.widget.RecyclerView rv = v.findViewById(R.id.rvMembers);
+        ProgressBar progress = v.findViewById(R.id.progress);
+        RecyclerView rv = v.findViewById(R.id.rvMembers);
 
         rv.setLayoutManager(new LinearLayoutManager(requireContext()));
-        MembersAdapter adapter = new MembersAdapter();
+
+        MembersAdapter adapter = new MembersAdapter(member -> {
+            if (member.uid == null || member.uid.isEmpty()) return;
+            startActivity(new Intent(requireContext(), com.example.habibitar.ui.profile.ProfileActivity.class)
+                    .putExtra(com.example.habibitar.ui.profile.ProfileActivity.EXTRA_UID, member.uid));
+            dismiss(); // close the sheet
+        });
         rv.setAdapter(adapter);
 
         progress.setVisibility(View.VISIBLE);

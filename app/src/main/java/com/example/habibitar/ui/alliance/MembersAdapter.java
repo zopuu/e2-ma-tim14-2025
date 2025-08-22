@@ -18,7 +18,15 @@ import java.util.List;
 
 public class MembersAdapter extends RecyclerView.Adapter<MembersAdapter.VH> {
 
+    public interface OnMemberClick { void onMember(AllianceMember m); }
+
     private final List<AllianceMember> data = new ArrayList<>();
+    private final OnMemberClick onClick;
+
+    // NEW: pass a click handler
+    public MembersAdapter(@NonNull OnMemberClick onClick) {
+        this.onClick = onClick;
+    }
 
     public void submit(List<AllianceMember> list) {
         data.clear();
@@ -27,20 +35,14 @@ public class MembersAdapter extends RecyclerView.Adapter<MembersAdapter.VH> {
     }
 
     @NonNull @Override public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_alliance_member, parent, false);
+        View v = LayoutInflater.from(parent.getContext())
+                .inflate(R.layout.item_alliance_member, parent, false);
         return new VH(v);
     }
 
     @Override public void onBindViewHolder(@NonNull VH h, int pos) {
         AllianceMember m = data.get(pos);
-        h.tvUsername.setText(m.username);
-        h.tvRole.setText("leader".equals(m.role) ? "Leader" : "Member");
-        // Map your avatarKey → drawable (same helper you used on Profile)
-        if (m.avatarKey != null) {
-            h.imgAvatar.setImageResource(Avatars.map(m.avatarKey));
-        } else {
-            h.imgAvatar.setImageResource(R.drawable.ic_avatar_placeholder);
-        }
+        h.bind(m, onClick);
     }
 
     @Override public int getItemCount() { return data.size(); }
@@ -48,11 +50,20 @@ public class MembersAdapter extends RecyclerView.Adapter<MembersAdapter.VH> {
     static class VH extends RecyclerView.ViewHolder {
         ImageView imgAvatar;
         TextView tvUsername, tvRole;
+
         VH(@NonNull View v) {
             super(v);
             imgAvatar = v.findViewById(R.id.imgAvatar);
             tvUsername = v.findViewById(R.id.tvUsername);
-            tvRole = v.findViewById(R.id.tvRole);
+            tvRole = v.findViewById(R.id.tvRole); // make sure this id exists in item_alliance_member.xml
+        }
+
+        void bind(AllianceMember m, OnMemberClick onClick) {
+            tvUsername.setText(m.username);
+            tvRole.setText("leader".equals(m.role) ? "Leader" : "Member");
+            imgAvatar.setImageResource(m.avatarKey != null ? Avatars.map(m.avatarKey)
+                    : R.drawable.ic_avatar_placeholder);
+            itemView.setOnClickListener(v -> { if (onClick != null) onClick.onMember(m); });
         }
     }
 }

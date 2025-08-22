@@ -2,7 +2,9 @@
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent" android:layout_height="wrap_content"
     android:foreground="?attr/selectableItemBackground"
-    android:paddingTop="8dp" android:paddingBottom="8dp">
+    android:paddingTop="8dp" android:paddingBottom="8dp"
+    android:clickable="true"
+    android:focusable="true">
 
     <LinearLayout
         android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content"
