@@ -108,8 +108,8 @@
             android:id="@+id/btnOpenChat"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Open alliance chat (coming soon)"
-            android:enabled="false"/>
+            android:text="Open alliance chat"
+            android:enabled="true"/>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnShowMembers"

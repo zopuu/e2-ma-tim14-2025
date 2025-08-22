@@ -11,6 +11,7 @@ import androidx.core.app.NotificationCompat;
 import com.example.habibitar.R;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentChange;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 
@@ -22,6 +23,9 @@ public class NotificationsHub {
 
     private static final String CH_INVITES = "alliance_invites";
     private static final String CH_EVENTS  = "alliance_events";
+    private ListenerRegistration messagesReg;
+    private final Set<String> shownMessageIds =
+            Collections.synchronizedSet(new HashSet<>());
 
     private static final NotificationsHub INSTANCE = new NotificationsHub();
     public static NotificationsHub get() { return INSTANCE; }
@@ -132,12 +136,51 @@ public class NotificationsHub {
                         );
                     }
                 });
+        if (messagesReg != null) messagesReg.remove();
+        messagesReg = db.collection("users").document(uid)
+                .collection("notifications")
+                .whereEqualTo("type", "alliance_message")
+                .whereEqualTo("delivered", false)
+                .addSnapshotListener((snap, err) -> {
+                    if (err != null || snap == null) return;
+                    for (DocumentChange ch : snap.getDocumentChanges()) {
+                        if (ch.getType() != DocumentChange.Type.ADDED) continue;
+
+                        String id = ch.getDocument().getId();
+                        if (!shownMessageIds.add(id)) continue; // in-app de-dupe
+
+                        String allianceName = ch.getDocument().getString("allianceName");
+                        String fromName = ch.getDocument().getString("fromUsername");
+                        String preview = ch.getDocument().getString("messagePreview");
+
+                        // Optional: suppress if user is currently inside this alliance chat
+                        String allianceId = ch.getDocument().getString("allianceId");
+                        if (allianceId != null && allianceId.equals(activeChatAllianceId)) {
+                            // just mark delivered, no notification
+                            ch.getDocument().getReference().update(
+                                    "delivered", true,
+                                    "deliveredAt", FieldValue.serverTimestamp()
+                            );
+                            continue;
+                        }
+
+                        showMessageNotification(id, allianceName, fromName, preview);
+
+                        ch.getDocument().getReference().update(
+                                "delivered", true,
+                                "deliveredAt", FieldValue.serverTimestamp()
+                        );
+                    }
+                });
+
     }
 
     private void detachAll() {
         if (invitesReg != null) { invitesReg.remove(); invitesReg = null; }
         if (acceptsReg != null) { acceptsReg.remove(); acceptsReg = null; }
+        if (messagesReg != null) { messagesReg.remove();messagesReg = null; }
         shownAcceptIds.clear();
+        shownMessageIds.clear();
     }
 
     private void showAllianceAcceptNotification(String docId, String who, String allianceName) {
@@ -161,4 +204,28 @@ public class NotificationsHub {
         NotificationManager nm = (NotificationManager) app.getSystemService(Context.NOTIFICATION_SERVICE);
         nm.notify(nid, b.build());
     }
+    private void showMessageNotification(String docId, String allianceName, String from, String preview) {
+        int nid = ("msg_" + docId).hashCode();
+        Intent open = new Intent(app, com.example.habibitar.ui.alliance.AllianceActivity.class);
+        PendingIntent pi = PendingIntent.getActivity(
+                app, nid, open,
+                (android.os.Build.VERSION.SDK_INT >= 23)
+                        ? PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+                        : PendingIntent.FLAG_UPDATE_CURRENT);
+
+        NotificationCompat.Builder b = new NotificationCompat.Builder(app, CH_EVENTS)
+                .setSmallIcon(R.drawable.ic_chat_24)
+                .setContentTitle("New message in " + (allianceName == null ? "Alliance" : allianceName))
+                .setContentText(from + ": " + (preview == null ? "" : preview))
+                .setAutoCancel(true)
+                .setContentIntent(pi);
+
+        ((NotificationManager) app.getSystemService(Context.NOTIFICATION_SERVICE)).notify(nid, b.build());
+    }
+    private volatile @androidx.annotation.Nullable String activeChatAllianceId = null;
+    public void setActiveChat(@androidx.annotation.Nullable String allianceId) {
+        activeChatAllianceId = allianceId;
+    }
+
+
 }

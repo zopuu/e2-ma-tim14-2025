@@ -1,5 +1,6 @@
 package com.example.habibitar.ui.alliance;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -52,8 +53,14 @@ public class AllianceActivity extends AppCompatActivity {
 
         findViewById(R.id.btnCreateAlliance).setOnClickListener(v -> openCreateAllianceSheet());
         btnOpenChat.setOnClickListener(v -> {
-            // Placeholder for 7.2
-            // TODO: start AllianceChatActivity with allianceId
+            if (currentAllianceId == null) {
+                Toast.makeText(this, "You’re not in an alliance yet.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            Intent i = new Intent(this, AllianceChatActivity.class);
+            i.putExtra("allianceId", currentAllianceId);
+            i.putExtra("allianceName", tvAllianceName.getText().toString());
+            startActivity(i);
         });
         btnShowMembers.setOnClickListener(v-> {
             if(currentAllianceId == null) return;
