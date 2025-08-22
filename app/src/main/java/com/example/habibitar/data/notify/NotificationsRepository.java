@@ -141,18 +141,35 @@ public class NotificationsRepository {
                 .addOnFailureListener(f::completeExceptionally);
         return f;
     }
-    private void notifyCreatorOfAccept(FirebaseFirestore db, String creatorUid, String me, String allianceId, CompletableFuture<Void> f) {
-        String docId = "alliance_accept_" + me + "_" + allianceId;
-        db.collection("users").document(creatorUid)
-                .collection("notifications").document(docId)
-                .set(new java.util.HashMap<String, Object>() {{
-                    put("type", "alliance_accept");
-                    put("byUid", me);
-                    put("allianceId", allianceId);
-                    put("createdAt", FieldValue.serverTimestamp());
-                    put("pending", false);
-                }}, SetOptions.merge())
-                .addOnSuccessListener(u -> f.complete(null))
-                .addOnFailureListener(f::completeExceptionally);
+    private void notifyCreatorOfAccept(
+            FirebaseFirestore db, String creatorUid, String me, String allianceId, CompletableFuture<Void> f) {
+
+        DocumentReference allianceRef = db.collection("alliances").document(allianceId);
+        DocumentReference myUserRef   = db.collection("users").document(me);
+
+        // Fetch alliance name and my username in parallel, then write creator's notif
+        allianceRef.get().addOnSuccessListener(aSnap -> {
+            final String allianceName = aSnap.getString("name");
+
+            myUserRef.get().addOnSuccessListener(meSnap -> {
+                final String byUsername = meSnap.getString("username");
+
+                String docId = "alliance_accept_" + me + "_" + allianceId;
+                db.collection("users").document(creatorUid)
+                        .collection("notifications").document(docId)
+                        .set(new java.util.HashMap<String, Object>() {{
+                            put("type", "alliance_accept");
+                            put("byUid", me);
+                            put("byUsername", byUsername);
+                            put("allianceId", allianceId);
+                            put("allianceName", allianceName);
+                            put("createdAt", FieldValue.serverTimestamp());
+                            put("pending", false);             // informational
+                        }}, SetOptions.merge())
+                        .addOnSuccessListener(u -> f.complete(null))
+                        .addOnFailureListener(f::completeExceptionally);
+
+            }).addOnFailureListener(f::completeExceptionally);
+        }).addOnFailureListener(f::completeExceptionally);
     }
 }

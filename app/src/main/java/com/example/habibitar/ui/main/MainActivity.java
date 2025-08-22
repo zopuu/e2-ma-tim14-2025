@@ -45,6 +45,12 @@ public class MainActivity extends AppCompatActivity implements com.google.androi
     private com.google.firebase.firestore.ListenerRegistration invitesReg;
     private static final String CH_INVITES = "alliance_invites";
 
+    private com.google.firebase.firestore.ListenerRegistration acceptsReg;
+    private static final String CH_EVENTS = "alliance_events"; // creator-side events
+    private final java.util.Set<String> shownAcceptIds =
+            java.util.Collections.synchronizedSet(new java.util.HashSet<>());
+
+
     private void ensureInviteChannel() {
         if (android.os.Build.VERSION.SDK_INT >= 26) {
             android.app.NotificationChannel ch = new android.app.NotificationChannel(
@@ -186,13 +192,16 @@ public class MainActivity extends AppCompatActivity implements com.google.androi
     @Override protected void onResume() {
         super.onResume();
         ensureInviteChannel();
+        ensureEventsChannel();
         ensureNotificationsPermissionThenStart();
         startInviteListener();
+        startAcceptListener();
     }
 
     @Override protected void onPause() {
         super.onPause();
         if (invitesReg != null) { invitesReg.remove(); invitesReg = null; }
+        if (acceptsReg != null) { acceptsReg.remove(); acceptsReg = null; }
     }
 
     private void startInviteListener() {
@@ -220,4 +229,69 @@ public class MainActivity extends AppCompatActivity implements com.google.androi
                     }
                 });
     }
+    private void ensureEventsChannel() {
+        if (android.os.Build.VERSION.SDK_INT >= 26) {
+            android.app.NotificationChannel ch = new android.app.NotificationChannel(
+                    CH_EVENTS, "Alliance events", android.app.NotificationManager.IMPORTANCE_DEFAULT);
+            ch.setDescription("Notifications when members accept your invites");
+            getSystemService(android.app.NotificationManager.class).createNotificationChannel(ch);
+        }
+    }
+    private void startAcceptListener() {
+        String me = com.google.firebase.auth.FirebaseAuth.getInstance().getUid();
+        if (me == null) return;
+
+        com.google.firebase.firestore.FirebaseFirestore db = com.google.firebase.firestore.FirebaseFirestore.getInstance();
+        if (acceptsReg != null) acceptsReg.remove();
+
+        acceptsReg = db.collection("users").document(me)
+                .collection("notifications")
+                .whereEqualTo("type", "alliance_accept")
+                .addSnapshotListener((snap, err) -> {
+                    if (err != null || snap == null) return;
+
+                    for (com.google.firebase.firestore.DocumentChange ch : snap.getDocumentChanges()) {
+                        if (ch.getType() != com.google.firebase.firestore.DocumentChange.Type.ADDED) continue;
+
+                        com.google.firebase.firestore.DocumentSnapshot d = ch.getDocument();
+                        String id = d.getId();
+                        if (shownAcceptIds.contains(id)) continue; // de-dupe while app is alive
+                        shownAcceptIds.add(id);
+
+                        String who = d.getString("byUsername");
+                        if (who == null || who.isEmpty()) who = d.getString("byUid");
+                        String alliance = d.getString("allianceName");
+                        if (alliance == null || alliance.isEmpty()) alliance = "your alliance";
+
+                        showAllianceAcceptNotification(id, who, alliance);
+                    }
+                });
+    }
+
+    private void showAllianceAcceptNotification(String docId, String who, String allianceName) {
+        int nid = ("accept_" + docId).hashCode();
+
+        // (optional) open Alliance screen on tap
+        Intent openAlliance = new Intent(this, com.example.habibitar.ui.alliance.AllianceActivity.class);
+        android.app.PendingIntent contentPi = android.app.PendingIntent.getActivity(
+                this, nid, openAlliance,
+                (android.os.Build.VERSION.SDK_INT >= 23)
+                        ? android.app.PendingIntent.FLAG_UPDATE_CURRENT | android.app.PendingIntent.FLAG_IMMUTABLE
+                        : android.app.PendingIntent.FLAG_UPDATE_CURRENT);
+
+        androidx.core.app.NotificationCompat.Builder b =
+                new androidx.core.app.NotificationCompat.Builder(this, CH_EVENTS)
+                        .setSmallIcon(R.drawable.ic_groups_24)
+                        .setContentTitle("Invite accepted")
+                        .setContentText(who + " joined " + allianceName)
+                        .setPriority(androidx.core.app.NotificationCompat.PRIORITY_DEFAULT)
+                        .setAutoCancel(true)
+                        .setContentIntent(contentPi);
+
+        android.app.NotificationManager nm =
+                (android.app.NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        nm.notify(nid, b.build());
+    }
+
+
 }
