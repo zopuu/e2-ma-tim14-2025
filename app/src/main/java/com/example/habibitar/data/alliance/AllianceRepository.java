@@ -117,7 +117,7 @@ public class AllianceRepository {
                     batch.update(meUserRef, "allianceId", allianceRef.getId());
 
                     batch.commit().addOnSuccessListener(unused -> {
-                        notifications.sendAllianceInviteToAllFriends(allianceRef.getId(), name)
+                        notifications.sendAllianceInviteToAllFriends(allianceRef.getId(), name, ownerUsernameFinal)
                                 .thenAccept(v -> future.complete(
                                         new Alliance(allianceRef.getId(), name, me, 1, ownerUsernameFinal, false)
                                 ))
@@ -144,11 +144,11 @@ public class AllianceRepository {
             boolean missionActive = Boolean.TRUE.equals(aSnap.getBoolean("missionActive"));
 
             if (!me.equals(ownerUid)) {
-                future.completeExceptionally(new IllegalStateException("Samo vođa može ukinuti savez."));
+                future.completeExceptionally(new IllegalStateException("Only leader can disband alliance"));
                 return;
             }
             if (missionActive) {
-                future.completeExceptionally(new IllegalStateException("Misija je pokrenuta. Savez se ne može ukinuti."));
+                future.completeExceptionally(new IllegalStateException("Mission is ongoing. Alliance can not be dibanded."));
                 return;
             }
 
@@ -182,11 +182,11 @@ public class AllianceRepository {
             boolean missionActive = Boolean.TRUE.equals(aSnap.getBoolean("missionActive"));
 
             if (me.equals(ownerUid)) {
-                future.completeExceptionally(new IllegalStateException("Vođa ne može napustiti savez. Može samo ukinuti."));
+                future.completeExceptionally(new IllegalStateException("Leader can not leave alliance. Leader can only disband alliance."));
                 return;
             }
             if (missionActive) {
-                future.completeExceptionally(new IllegalStateException("Misija je pokrenuta. Ne možeš napustiti savez."));
+                future.completeExceptionally(new IllegalStateException("Mission is ongoing. You can not leave alliance."));
                 return;
             }
 

@@ -97,9 +97,10 @@ public class NotificationsHub {
                         String fromUid = ch.getDocument().getString("fromUid");
 
                         // Only show if we actually have runtime permission (Android 13+)
+                        String inviter = ch.getDocument().getString("fromUsername");
                         if (notifEnabled) {
                             InviteForegroundService.start(
-                                    app, docId, allianceId, allianceName, fromUid);
+                                    app, docId, allianceId, allianceName, fromUid, inviter);
                         }
                     }
                 });

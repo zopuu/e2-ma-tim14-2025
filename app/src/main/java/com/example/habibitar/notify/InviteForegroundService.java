@@ -19,16 +19,18 @@ public class InviteForegroundService extends Service {
     public static final String EXTRA_ALLIANCEID = "allianceId";
     public static final String EXTRA_ALLIANCENAME = "allianceName";
     public static final String EXTRA_FROMUID = "fromUid";
+    public static final String EXTRA_FROMNAME = "fromUsername";
     private static final String CH_INVITES = "alliance_invites";
 
-    public static void start(Context ctx, String notifDocId, String allianceId, String allianceName, String fromUid) {
+    public static void start(Context ctx, String notifDocId, String allianceId, String allianceName, String fromUid, String fromUsername) {
         int id = notifDocId.hashCode();
         Intent i = new Intent(ctx, InviteForegroundService.class)
                 .putExtra(EXTRA_NOTIF_ID, id)
                 .putExtra(EXTRA_NOTIF_DOC, notifDocId)
                 .putExtra(EXTRA_ALLIANCEID, allianceId)
                 .putExtra(EXTRA_ALLIANCENAME, allianceName)
-                .putExtra(EXTRA_FROMUID, fromUid);
+                .putExtra(EXTRA_FROMUID, fromUid)
+                .putExtra(EXTRA_FROMNAME, fromUsername);
         androidx.core.content.ContextCompat.startForegroundService(ctx, i);
     }
 
@@ -44,6 +46,7 @@ public class InviteForegroundService extends Service {
         String allianceId  = i.getStringExtra(EXTRA_ALLIANCEID);
         String allianceName= i.getStringExtra(EXTRA_ALLIANCENAME);
         String fromUid     = i.getStringExtra(EXTRA_FROMUID);
+        String fromName    = i.getStringExtra(EXTRA_FROMNAME);
 
         // build actions → explicit broadcast receiver
         Intent accept = new Intent(getApplicationContext(), com.example.habibitar.notify.AllianceInviteActionReceiver.class)
@@ -79,14 +82,14 @@ public class InviteForegroundService extends Service {
 
         Notification n = new NotificationCompat.Builder(getApplicationContext(), CH_INVITES)
                 .setSmallIcon(R.drawable.ic_groups_24)
-                .setContentTitle("Poziv u savez")
-                .setContentText("Savez: " + (allianceName == null ? "" : allianceName))
+                .setContentTitle("Alliance invite from " + (fromName))
+                .setContentText("Alliance: " + (allianceName == null ? "" : allianceName))
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setOngoing(true)      // advise “sticky”
                 .setAutoCancel(false)  // never auto-cancel
                 .setDeleteIntent(piDismiss) // 👈 catch swipe-away
-                .addAction(0, "Prihvati", piAccept)
-                .addAction(0, "Odbij",    piDecline)
+                .addAction(0, "Accept", piAccept)
+                .addAction(0, "Decline",    piDecline)
                 .build();
 
         startForeground(id, n);

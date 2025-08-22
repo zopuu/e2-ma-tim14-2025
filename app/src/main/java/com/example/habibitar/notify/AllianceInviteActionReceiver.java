@@ -15,6 +15,7 @@ public class AllianceInviteActionReceiver extends BroadcastReceiver {
         final String notifDocId = i.getStringExtra("notifDocId");
         final String allianceId  = i.getStringExtra("allianceId");
         final String fromUid     = i.getStringExtra("fromUid");
+        final String fromName    = i.getStringExtra("fromName");
         final int notificationId = i.getIntExtra("notificationId", 0);
 
         // Work in background safely
@@ -59,7 +60,7 @@ public class AllianceInviteActionReceiver extends BroadcastReceiver {
                             new android.os.Handler(ctx.getMainLooper()).postDelayed(() ->
                                             com.example.habibitar.notify.InviteForegroundService.start(
                                                     ctx.getApplicationContext(),
-                                                    notifDocId, allianceId, allianceName, fromUid),
+                                                    notifDocId, allianceId, allianceName, fromUid, fromName),
                                     400);
                         }
                         pr.finish();

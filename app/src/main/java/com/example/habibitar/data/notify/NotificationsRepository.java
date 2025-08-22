@@ -27,11 +27,11 @@ public class NotificationsRepository {
 
     /** Sends an "alliance_invite" notification to ALL of my friends. Idempotent per allianceId. */
     public CompletableFuture<Void> sendAllianceInviteToAllFriends(
-            @NonNull String allianceId, @NonNull String allianceName) {
+            @NonNull String allianceId, @NonNull String allianceName, @NonNull String inviterUsername) {
 
         String me = requireUid();
         return loadFriendUids(me).thenCompose(friendUids ->
-                writeAllianceInvites(me, friendUids, allianceId, allianceName)
+                writeAllianceInvites(me, friendUids, allianceId, allianceName, inviterUsername)
         );
     }
 
@@ -53,7 +53,8 @@ public class NotificationsRepository {
             @NonNull String fromUid,
             @NonNull List<String> friendUids,
             @NonNull String allianceId,
-            @NonNull String allianceName) {
+            @NonNull String allianceName,
+            @NonNull String inviterUsername) {
 
         List<CompletableFuture<Void>> writes = new ArrayList<>();
         for (String friendUid : friendUids) {
@@ -65,6 +66,7 @@ public class NotificationsRepository {
             HashMap<String, Object> payload = new HashMap<>();
             payload.put("type", "alliance_invite");
             payload.put("fromUid", fromUid);
+            payload.put("fromUsername", inviterUsername);
             payload.put("allianceId", allianceId);
             payload.put("allianceName", allianceName);
             payload.put("pending", true); // must be accepted/declined later
