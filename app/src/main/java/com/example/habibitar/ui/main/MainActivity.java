@@ -1,6 +1,9 @@
 package com.example.habibitar.ui.main;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.Menu;
@@ -10,6 +13,8 @@ import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.activity.OnBackPressedCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
@@ -27,6 +32,7 @@ import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 
+
 public class MainActivity extends AppCompatActivity implements com.google.android.material.navigation.NavigationView.OnNavigationItemSelectedListener {
 
     private MaterialToolbar topAppBar;
@@ -35,6 +41,36 @@ public class MainActivity extends AppCompatActivity implements com.google.androi
 
     private static final int MENU_VIEW_PROFILE = 1001;
     private static final int MENU_LOGOUT = 1002;
+
+    private com.google.firebase.firestore.ListenerRegistration invitesReg;
+    private static final String CH_INVITES = "alliance_invites";
+
+    private void ensureInviteChannel() {
+        if (android.os.Build.VERSION.SDK_INT >= 26) {
+            android.app.NotificationChannel ch = new android.app.NotificationChannel(
+                    CH_INVITES, "Alliance invites", android.app.NotificationManager.IMPORTANCE_HIGH);
+            ch.setDescription("Invitations to join alliances");
+            android.app.NotificationManager nm = getSystemService(android.app.NotificationManager.class);
+            nm.createNotificationChannel(ch);
+        }
+    }
+    private final ActivityResultLauncher<String> notifPermLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
+                // Start the Firestore listener only after we have permission
+                if (granted) startInviteListener();
+            });
+
+    private void ensureNotificationsPermissionThenStart() {
+        if (Build.VERSION.SDK_INT >= 33) {
+            if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+                notifPermLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+                return;
+            }
+        }
+        // <33 or already granted
+        startInviteListener();
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -147,16 +183,41 @@ public class MainActivity extends AppCompatActivity implements com.google.androi
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
-
-    /* depreciated
-    @Override
-    public void onBackPressed() {
-        androidx.drawerlayout.widget.DrawerLayout drawer = findViewById(R.id.drawer_layout);
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
-        } else {
-            super.onBackPressed();
-        }
+    @Override protected void onResume() {
+        super.onResume();
+        ensureInviteChannel();
+        ensureNotificationsPermissionThenStart();
+        startInviteListener();
     }
-    */
+
+    @Override protected void onPause() {
+        super.onPause();
+        if (invitesReg != null) { invitesReg.remove(); invitesReg = null; }
+    }
+
+    private void startInviteListener() {
+        String me = com.google.firebase.auth.FirebaseAuth.getInstance().getUid();
+        if (me == null) return;
+
+        com.google.firebase.firestore.FirebaseFirestore db = com.google.firebase.firestore.FirebaseFirestore.getInstance();
+        invitesReg = db.collection("users").document(me)
+                .collection("notifications")
+                .whereEqualTo("type", "alliance_invite")
+                .whereEqualTo("pending", true)
+                .addSnapshotListener((snap, err) -> {
+                    if (err != null || snap == null) return;
+                    for (com.google.firebase.firestore.DocumentChange ch : snap.getDocumentChanges()) {
+                        if (ch.getType() == com.google.firebase.firestore.DocumentChange.Type.ADDED) {
+                            com.google.firebase.firestore.DocumentSnapshot d = ch.getDocument();
+                            com.example.habibitar.notify.InviteForegroundService.start(
+                                    getApplicationContext(),
+                                    d.getId(),
+                                    d.getString("allianceId"),
+                                    d.getString("allianceName"),
+                                    d.getString("fromUid"));
+
+                        }
+                    }
+                });
+    }
 }

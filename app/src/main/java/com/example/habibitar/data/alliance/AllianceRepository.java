@@ -22,6 +22,8 @@ public class AllianceRepository {
 
     private final FirebaseFirestore db = FirebaseFirestore.getInstance();
     private final FirebaseAuth auth = FirebaseAuth.getInstance();
+    private final com.example.habibitar.data.notify.NotificationsRepository notifications =
+            new com.example.habibitar.data.notify.NotificationsRepository();
 
     private String requireUid() {
         if (auth.getCurrentUser() == null) throw new IllegalStateException("Not signed in");
@@ -115,7 +117,7 @@ public class AllianceRepository {
                     batch.update(meUserRef, "allianceId", allianceRef.getId());
 
                     batch.commit().addOnSuccessListener(unused -> {
-                        notifyAllFriendsOfAlliance(me, allianceRef.getId(), name)
+                        notifications.sendAllianceInviteToAllFriends(allianceRef.getId(), name)
                                 .thenAccept(v -> future.complete(
                                         new Alliance(allianceRef.getId(), name, me, 1, ownerUsernameFinal, false)
                                 ))
@@ -125,46 +127,6 @@ public class AllianceRepository {
                 .addOnFailureListener(future::completeExceptionally);
 
         return future;
-    }
-
-
-    /** Writes a simple "alliance_invite" notification for each friend. */
-    private CompletableFuture<Void> notifyAllFriendsOfAlliance(
-            @NonNull String ownerUid, @NonNull String allianceId, @NonNull String allianceName) {
-
-        CompletableFuture<Void> f = new CompletableFuture<>();
-
-        // load my friends
-        db.collection("users").document(ownerUid).collection("friends").get()
-                .addOnSuccessListener((QuerySnapshot friends) -> {
-                    List<CompletableFuture<Void>> writes = new ArrayList<>();
-                    for (DocumentSnapshot d : friends) {
-                        String friendUid = d.getId();
-                        DocumentReference notif =
-                                db.collection("users").document(friendUid)
-                                        .collection("notifications").document();
-
-                        HashMap<String, Object> payload = new HashMap<>();
-                        payload.put("type", "alliance_invite");
-                        payload.put("fromUid", ownerUid);
-                        payload.put("allianceId", allianceId);
-                        payload.put("allianceName", allianceName);
-                        payload.put("createdAt", FieldValue.serverTimestamp());
-                        payload.put("pending", true); // must be accepted/declined per spec
-                        // You can add 'message' if you want
-
-                        CompletableFuture<Void> one = new CompletableFuture<>();
-                        notif.set(payload)
-                                .addOnSuccessListener(unused -> one.complete(null))
-                                .addOnFailureListener(one::completeExceptionally);
-                        writes.add(one);
-                    }
-                    allOf(writes).thenAccept(v -> f.complete(null))
-                            .exceptionally(ex -> { f.completeExceptionally(ex); return null; });
-                })
-                .addOnFailureListener(f::completeExceptionally);
-
-        return f;
     }
 
     private static CompletableFuture<Void> allOf(List<CompletableFuture<Void>> fs) {

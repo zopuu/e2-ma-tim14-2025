@@ -3,11 +3,11 @@
   <component name="deploymentTargetSelector">
     <selectionStates>
       <SelectionState runConfigName="app">
-        <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-08-19T17:19:53.544845Z">
+        <option name="selectionMode" value="DIALOG" />
+        <DropdownSelection timestamp="2025-08-22T12:11:58.906464900Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="PhysicalDevice" identifier="serial=R58R72VRPQY" />
+              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\Veljko Puzovic\.android\avd\Medium_Phone.avd" />
             </handle>
           </Target>
         </DropdownSelection>
