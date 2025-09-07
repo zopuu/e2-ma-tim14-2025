@@ -54,13 +54,28 @@
             android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"/>
         <activity android:name=".ui.alliance.AllianceActivity" />
         <activity android:name=".ui.alliance.AllianceChatActivity" android:exported="false"/>
-
-
+        <activity
+            android:name=".ui.Task.TaskCreationActivity"
+            android:exported="false"
+            android:label="Create Task"/>
+        <activity
+            android:name=".ui.Task.Categories.CategoriesActivity"
+            android:exported="false"
+            android:label="Categories"/>
+        <activity
+            android:name=".ui.Task.DisplayTasksActivity"
+            android:exported="false"
+            android:label="Display All tasks"/>
+        <activity
+            android:name=".ui.Task.AllTasksActivity"
+            android:exported="false"
+            android:label="All tasks"/>
 
         <receiver
             android:name=".notify.AllianceInviteActionReceiver"
             android:exported="false" />
 
+        <activity android:name=".ui.Task.TaskEditActivity" />
 
         <service
             android:name=".notify.InviteForegroundService"

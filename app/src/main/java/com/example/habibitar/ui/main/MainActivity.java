@@ -162,16 +162,24 @@ public class MainActivity extends AppCompatActivity implements com.google.androi
         int id = item.getItemId();
         if (id == R.id.nav_friends) {
             startActivity(new Intent(this, com.example.habibitar.ui.friends.FriendsActivity.class));
-        }
-        if (id == R.id.nav_alliance) {
+        }else if (id == R.id.nav_alliance) {
             startActivity(new Intent(this, com.example.habibitar.ui.alliance.AllianceActivity.class));
+        } else if(id == R.id.nav_task_creation)
+        {
+            startActivity(new Intent(this, com.example.habibitar.ui.Task.TaskCreationActivity.class));
+        } else if(id == R.id.nav_categories)
+        {
+            startActivity(new Intent(this, com.example.habibitar.ui.Task.Categories.CategoriesActivity.class));
+        } else if(id == R.id.nav_all_categories)
+        {
+            startActivity(new Intent(this, com.example.habibitar.ui.Task.AllTasksActivity.class));
         }
 
-        // Close drawer after click
-        androidx.drawerlayout.widget.DrawerLayout drawer = findViewById(R.id.drawer_layout);
+        DrawerLayout drawer = findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
+
     @Override protected void onResume() {
         super.onResume();
 

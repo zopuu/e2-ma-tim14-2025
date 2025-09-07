@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="categories">
+        <item>Work</item>
+        <item>Personal</item>
+        <item>Urgent</item>
+        <item>Other</item>
+    </string-array>
+
+    <string-array name="frequencies">
+        <item>One-time</item>
+        <item>Repeating</item>
+    </string-array>
+
+    <string-array name="difficulties">
+        <item>Very Easy - 1XP</item>
+        <item>Easy - 3XP</item>
+        <item>Hard - 7XP</item>
+        <item>Extreamly Hard - 20XP</item>
+    </string-array>
+
+    <string-array name="importance">
+        <item>Normal - 1XP</item>
+        <item>Important - 3XP</item>
+        <item>Extreamly Important - 10XP</item>
+        <item>Special - 100XP</item>
+    </string-array>
+
+</resources>
