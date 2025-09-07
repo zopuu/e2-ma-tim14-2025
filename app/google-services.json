@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "545159918098",
+    "project_id": "habibitar",
+    "storage_bucket": "habibitar.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:545159918098:android:e63d8f081da5d61c7a5ecb",
+        "android_client_info": {
+          "package_name": "com.example.habibitar"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB3UoZvXNdy-uG_l28TGsnieGyGGeH9GZk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

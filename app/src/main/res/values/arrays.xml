@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <array name="category_colors">
+        <item>@color/red500</item>
+        <item>@color/pink500</item>
+        <item>@color/dpurple500</item>
+        <item>@color/indigo500</item>
+        <item>@color/blue500</item>
+        <item>@color/lightblue500</item>
+        <item>@color/cyan500</item>
+        <item>@color/teal500</item>
+        <item>@color/green500</item>
+        <item>@color/amber500</item>
+        <item>@color/orange500</item>
+        <item>@color/deeporange500</item>
+        <item>@color/brown500</item>
+        <item>@color/grey500</item>
+        <item>@color/bluegrey500</item>
+    </array>
+</resources>
