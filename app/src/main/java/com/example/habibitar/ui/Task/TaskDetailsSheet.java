@@ -220,8 +220,10 @@ public class TaskDetailsSheet extends BottomSheetDialogFragment {
                                                     }
                                                     int xp = taskXp(task); // difficulty + importance
                                                     // 1) uvećaj XP korisniku
+                                                    int baseDifficulty = xpFromEnumName(task.getDifficulty());   // e.g., 1/3/7/20
+                                                    int baseImportance = xpFromEnumName(task.getImportance());   // e.g., 1/3/10/100
                                                     new com.example.habibitar.data.user.UserRepository()
-                                                            .incrementXp(ownerId, xp)
+                                                            .incrementXpWithLeveling(ownerId, baseDifficulty, baseImportance)
                                                             // 2) obeleži xpGranted = true na tasku
                                                             .thenCompose(ignored ->
                                                                     repo.updateTask(taskId,
