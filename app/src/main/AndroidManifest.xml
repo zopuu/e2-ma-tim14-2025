@@ -2,7 +2,20 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+
+
     <application
+        android:name=".App"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -10,16 +23,66 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.HabibiTar">
-        <activity
-            android:name=".MainActivity"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
+        android:theme="@style/Theme.HabibiTar"
+        >
 
-                <category android:name="android.intent.category.LAUNCHER" />
+        <activity
+            android:name=".ui.main.MainActivity"
+            android:exported="true">
+        </activity>
+        <activity android:name=".ui.auth.RegisterActivity" />
+        <activity android:name=".ui.auth.LoginActivity" android:exported="true"/>
+        <activity
+            android:name=".ui.main.SplashActivity"
+            android:exported="true"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+            android:noHistory="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <activity
+            android:name=".ui.profile.ProfileActivity"
+            android:exported="false"
+            android:label="Profile"/>
+        <activity android:name=".ui.friends.FriendsActivity" />
+        <activity
+            android:name=".ui.qr.QRScanActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"/>
+        <activity android:name=".ui.alliance.AllianceActivity" />
+        <activity android:name=".ui.alliance.AllianceChatActivity" android:exported="false"/>
+        <activity
+            android:name=".ui.Task.TaskCreationActivity"
+            android:exported="false"
+            android:label="Create Task"/>
+        <activity
+            android:name=".ui.Task.Categories.CategoriesActivity"
+            android:exported="false"
+            android:label="Categories"/>
+        <activity
+            android:name=".ui.Task.DisplayTasksActivity"
+            android:exported="false"
+            android:label="Display All tasks"/>
+        <activity
+            android:name=".ui.Task.AllTasksActivity"
+            android:exported="false"
+            android:label="All tasks"/>
+
+        <receiver
+            android:name=".notify.AllianceInviteActionReceiver"
+            android:exported="false" />
+
+        <activity android:name=".ui.Task.TaskEditActivity" />
+
+        <service
+            android:name=".notify.InviteForegroundService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
+
     </application>
 
 </manifest>

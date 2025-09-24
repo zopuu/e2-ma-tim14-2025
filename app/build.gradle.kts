@@ -55,8 +55,9 @@ dependencies {
     implementation("androidx.room:room-runtime:2.7.2")
     annotationProcessor("androidx.room:room-compiler:2.7.2")
 
-    // --- ZXing (QR skener) ---
+    // QR scanning
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+    implementation("com.google.zxing:core:3.5.3")
 
     // --- MPAndroidChart ---
     implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
@@ -64,4 +65,9 @@ dependencies {
     // --- Navigation komponenta (Fragments + NavUI) ---
     implementation("androidx.navigation:navigation-fragment:2.9.3")
     implementation("androidx.navigation:navigation-ui:2.9.3")
+    
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+
+
 }
+//apply plugin: "com.google.gms.google-services"

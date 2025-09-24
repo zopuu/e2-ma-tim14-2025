@@ -1,0 +1,105 @@
+<GridLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:columnCount="2"
+    android:rowCount="8"
+    android:padding="16dp">
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        app:title="Categories"
+        app:navigationIcon="?attr/homeAsUpIndicator"
+        android:layout_row="0"
+        android:layout_column="0"
+        android:layout_columnSpan="2"/>
+
+    <TextView
+        android:text="Name:"
+        android:layout_row="1"
+        android:layout_column="0"
+        android:padding="16dp"/>
+
+    <EditText
+        android:id="@+id/etCategoryName"
+        android:layout_row="1"
+        android:layout_column="1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Category name"
+        android:padding="12dp"
+        android:inputType="textCapWords"
+        />
+
+    <TextView
+        android:text="Color:"
+        android:layout_row="2"
+        android:layout_column="0"
+        android:padding="16dp"/>
+
+    <View
+        android:id="@+id/viewColorPreview"
+        android:layout_row="2"
+        android:layout_column="1"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_gravity="start"
+        android:contentDescription="Selected color preview" />
+
+    <HorizontalScrollView
+        android:layout_row="3"
+        android:layout_column="0"
+        android:layout_columnSpan="2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fillViewport="false"
+        android:scrollbars="none"
+        android:layout_marginTop="8dp">
+
+        <LinearLayout
+            android:id="@+id/llColorStrip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingLeft="4dp"
+            android:paddingRight="4dp"/>
+    </HorizontalScrollView>
+
+    <Button
+        android:id="@+id/btnSaveCategory"
+        android:layout_row="4"
+        android:layout_column="0"
+        android:layout_columnSpan="2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Save"
+        android:layout_marginTop="24dp"
+        android:layout_gravity="center_horizontal"
+        android:onClick="onSaveClicked"/>
+
+    <View
+        android:id="@+id/dividerBelowSave"
+        android:layout_row="5"
+        android:layout_column="0"
+        android:layout_columnSpan="2"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="8dp"
+        android:background="#1F000000" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvCategories"
+        android:layout_row="6"
+        android:layout_column="0"
+        android:layout_columnSpan="2"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:minHeight="200dp"
+        android:layout_marginTop="8dp"
+        android:layout_rowWeight="1"
+    android:scrollbars="vertical" />
+
+
+</GridLayout>

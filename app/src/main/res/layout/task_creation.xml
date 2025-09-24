@@ -1,0 +1,207 @@
+<GridLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:columnCount="2"
+    android:rowCount="12"
+    android:padding="16dp">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        app:title="Create new task"
+        app:navigationIcon="?attr/homeAsUpIndicator"
+        android:layout_row="0"
+        android:layout_column="0"
+        android:layout_columnSpan="2"/>
+
+    <TextView
+        android:text="Category:"
+        android:layout_row="1"
+        android:layout_column="0"
+        android:padding="16dp"
+        />
+
+    <Spinner
+        android:id="@+id/spinnerCategory"
+        android:layout_row="1"
+        android:layout_column="1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:spinnerMode="dropdown"
+        android:background="@android:drawable/btn_dropdown"
+        android:padding="8dp"/>
+
+    <TextView
+        android:text="Difficulty:"
+        android:layout_row="2"
+        android:layout_column="0"
+        android:padding="16dp"/>
+
+    <Spinner
+        android:id="@+id/spinnerDifficultyCategory"
+        android:layout_row="2"
+        android:layout_column="1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:spinnerMode="dropdown"
+        android:background="@android:drawable/btn_dropdown"
+        android:padding="8dp"/>
+
+    <TextView
+        android:text="Importance:"
+        android:layout_row="3"
+        android:layout_column="0"
+        android:padding="16dp"/>
+
+    <Spinner
+        android:id="@+id/spinnerImportanceCategory"
+        android:layout_row="3"
+        android:layout_column="1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:spinnerMode="dropdown"
+        android:background="@android:drawable/btn_dropdown"
+        android:padding="8dp"/>
+
+    <TextView
+        android:text="Name:"
+        android:layout_row="4"
+        android:layout_column="0"
+        android:padding="16dp"/>
+
+    <EditText
+        android:id="@+id/etTaskName"
+        android:layout_row="4"
+        android:layout_column="1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Task name"
+        android:padding="12dp"
+        android:inputType="textCapWords"
+        />
+
+    <TextView
+        android:text="Description:"
+        android:layout_row="5"
+        android:layout_column="0"
+        android:padding="16dp"/>
+
+    <EditText
+        android:id="@+id/etDescription"
+        android:layout_row="5"
+        android:layout_column="1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Description"
+        android:padding="12dp"
+        android:inputType="textCapWords"
+        />
+
+    <TextView
+        android:text="Frequency:"
+        android:layout_row="6"
+        android:layout_column="0"
+        android:padding="16dp"/>
+
+    <Spinner
+        android:id="@+id/spinnerFrequencyCategory"
+        android:layout_row="6"
+        android:layout_column="1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:spinnerMode="dropdown"
+        android:background="@android:drawable/btn_dropdown"
+        android:padding="8dp"/>
+
+
+
+    <TextView
+        android:id="@+id/tvRepeatingInterval"
+        android:text="Repeating interval:"
+        android:layout_row="7"
+        android:layout_column="0"
+        android:padding="16dp"
+        android:visibility="gone"/>
+
+    <NumberPicker
+        android:id="@+id/numberPickerRepeatingInterval"
+        android:layout_row="7"
+        android:layout_column="1"
+        android:layout_height="58dp"
+        android:layout_gravity="start"
+        android:visibility="gone"/>
+
+    <TextView
+        android:id="@+id/tvUnitOfRepetition"
+        android:text="Unit of repetition:"
+        android:layout_row="8"
+        android:layout_column="0"
+        android:padding="16dp"
+        android:visibility="gone"/>
+
+    <Spinner
+        android:id="@+id/spinnerUnitOfRepetition"
+        android:layout_row="8"
+        android:layout_column="1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:spinnerMode="dropdown"
+        android:background="@android:drawable/btn_dropdown"
+        android:padding="8dp"
+        android:visibility="gone"/>
+
+    <TextView
+        android:id="@+id/tvStartDate"
+        android:text="Repetition start date:"
+        android:layout_row="9"
+        android:layout_column="0"
+        android:padding="16dp"
+        android:visibility="gone"/>
+
+    <EditText
+        android:id="@+id/etStartDate"
+        android:layout_row="9"
+        android:layout_column="1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:focusable="false"
+        android:clickable="true"
+        android:hint="Select start date"
+        android:padding="12dp"
+        android:visibility="gone"/>
+
+    <TextView
+        android:id="@+id/tvEndDate"
+        android:text="Repetition end date:"
+        android:layout_row="10"
+        android:layout_column="0"
+        android:padding="16dp"
+        android:visibility="gone"/>
+
+    <EditText
+        android:id="@+id/etEndDate"
+        android:layout_row="10"
+        android:layout_column="1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:focusable="false"
+        android:clickable="true"
+        android:hint="Select end date"
+        android:padding="12dp"
+        android:visibility="gone"/>
+
+
+    <Button
+        android:id="@+id/btnSaveTask"
+        android:layout_row="11"
+        android:layout_column="0"
+        android:layout_columnSpan="2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Save"
+        android:layout_marginTop="24dp"
+        android:layout_gravity="center_horizontal"
+        android:onClick="onSaveClicked"/>
+</GridLayout>

@@ -1,0 +1,253 @@
+package com.example.habibitar.data.alliance;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import com.example.habibitar.domain.model.Alliance;
+import com.example.habibitar.domain.model.AllianceMember;
+import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QuerySnapshot;
+import com.google.firebase.firestore.WriteBatch;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+
+public class AllianceRepository {
+
+    private final FirebaseFirestore db = FirebaseFirestore.getInstance();
+    private final FirebaseAuth auth = FirebaseAuth.getInstance();
+    private final com.example.habibitar.data.notify.NotificationsRepository notifications =
+            new com.example.habibitar.data.notify.NotificationsRepository();
+
+    private String requireUid() {
+        if (auth.getCurrentUser() == null) throw new IllegalStateException("Not signed in");
+        return auth.getCurrentUser().getUid();
+    }
+
+    /** Returns the user's current alliance, or null if none. */
+    public CompletableFuture<Alliance> getMyAlliance() {
+        String me = requireUid();
+        CompletableFuture<Alliance> future = new CompletableFuture<>();
+
+        db.collection("users").document(me).get()
+                .addOnSuccessListener(userDoc -> {
+                    String allianceId = userDoc.getString("allianceId");
+                    if (allianceId == null || allianceId.isEmpty()) { future.complete(null); return; }
+
+                    DocumentReference aRef = db.collection("alliances").document(allianceId);
+                    aRef.get().addOnSuccessListener(aSnap -> {
+                        if (!aSnap.exists()) { future.complete(null); return; }
+
+                        final String name = aSnap.getString("name");
+                        final String ownerUid = aSnap.getString("ownerUid");
+                        final Boolean missionActive = Boolean.TRUE.equals(aSnap.getBoolean("missionActive"));
+                        String ownerUsername = aSnap.getString("ownerUsername");
+
+                        // Fallback if older docs don't have ownerUsername yet
+                        CompletableFuture<String> ownerNameFuture = new CompletableFuture<>();
+                        if (ownerUsername != null) {
+                            ownerNameFuture.complete(ownerUsername);
+                        } else {
+                            db.collection("users").document(ownerUid).get()
+                                    .addOnSuccessListener(d -> ownerNameFuture.complete(
+                                            d.getString("username") != null ? d.getString("username") : ownerUid))
+                                    .addOnFailureListener(ownerNameFuture::completeExceptionally);
+                        }
+
+                        aRef.collection("members").get().addOnSuccessListener(members -> {
+                            ownerNameFuture.thenAccept(ownerName -> {
+                                future.complete(new Alliance(
+                                        aSnap.getId(),
+                                        name != null ? name : "Alliance",
+                                        ownerUid,
+                                        members.size(),
+                                        ownerName,
+                                        missionActive
+                                ));
+                            }).exceptionally(ex -> { future.completeExceptionally(ex); return null; });
+                        }).addOnFailureListener(future::completeExceptionally);
+
+                    }).addOnFailureListener(future::completeExceptionally);
+                })
+                .addOnFailureListener(future::completeExceptionally);
+
+        return future;
+    }
+
+
+    /**
+     * Creates an alliance with 'name', sets current user as leader, marks user membership,
+     * and sends notifications to all the user's friends.
+     */
+    public CompletableFuture<Alliance> createAllianceAndNotifyFriends(@NonNull String name) {
+        String me = requireUid();
+        CompletableFuture<Alliance> future = new CompletableFuture<>();
+
+        // fetch my username once to store in alliance doc
+        db.collection("users").document(me).get()
+                .addOnSuccessListener(myDoc -> {
+                    final String ownerUsernameFinal =
+                            myDoc.getString("username") != null ? myDoc.getString("username") : "user";
+
+                    DocumentReference allianceRef = db.collection("alliances").document();
+                    DocumentReference leaderMemberRef = allianceRef.collection("members").document(me);
+                    DocumentReference meUserRef = db.collection("users").document(me);
+
+                    WriteBatch batch = db.batch();
+
+                    java.util.HashMap<String, Object> a = new java.util.HashMap<>();
+                    a.put("name", name);
+                    a.put("ownerUid", me);
+                    a.put("ownerUsername", ownerUsernameFinal); // ✅ denormalized
+                    a.put("missionActive", false);         // ✅ placeholder flag
+                    a.put("createdAt", FieldValue.serverTimestamp());
+                    batch.set(allianceRef, a);
+
+                    java.util.HashMap<String, Object> leader = new java.util.HashMap<>();
+                    leader.put("role", "leader");
+                    leader.put("joinedAt", FieldValue.serverTimestamp());
+                    batch.set(leaderMemberRef, leader);
+
+                    batch.update(meUserRef, "allianceId", allianceRef.getId());
+
+                    batch.commit().addOnSuccessListener(unused -> {
+                        notifications.sendAllianceInviteToAllFriends(allianceRef.getId(), name, ownerUsernameFinal)
+                                .thenAccept(v -> future.complete(
+                                        new Alliance(allianceRef.getId(), name, me, 1, ownerUsernameFinal, false)
+                                ))
+                                .exceptionally(ex -> { future.completeExceptionally(ex); return null; });
+                    }).addOnFailureListener(future::completeExceptionally);
+                })
+                .addOnFailureListener(future::completeExceptionally);
+
+        return future;
+    }
+
+    private static CompletableFuture<Void> allOf(List<CompletableFuture<Void>> fs) {
+        return CompletableFuture.allOf(fs.toArray(new CompletableFuture[0]));
+    }
+    public CompletableFuture<Void> disbandAlliance(@NonNull String allianceId) {
+        String me = requireUid();
+        CompletableFuture<Void> future = new CompletableFuture<>();
+
+        DocumentReference aRef = db.collection("alliances").document(allianceId);
+        aRef.get().addOnSuccessListener(aSnap -> {
+            if (!aSnap.exists()) { future.complete(null); return; }
+
+            String ownerUid = aSnap.getString("ownerUid");
+            boolean missionActive = Boolean.TRUE.equals(aSnap.getBoolean("missionActive"));
+
+            if (!me.equals(ownerUid)) {
+                future.completeExceptionally(new IllegalStateException("Only leader can disband alliance"));
+                return;
+            }
+            if (missionActive) {
+                future.completeExceptionally(new IllegalStateException("Mission is ongoing. Alliance can not be dibanded."));
+                return;
+            }
+
+            // load members and remove memberships + delete subdocs
+            aRef.collection("members").get().addOnSuccessListener(members -> {
+                WriteBatch batch = db.batch();
+                for (DocumentSnapshot m : members) {
+                    String uid = m.getId();
+                    batch.update(db.collection("users").document(uid), "allianceId", null);
+                    batch.delete(aRef.collection("members").document(uid));
+                }
+                batch.delete(aRef);
+                batch.commit().addOnSuccessListener(unused -> future.complete(null))
+                        .addOnFailureListener(future::completeExceptionally);
+            }).addOnFailureListener(future::completeExceptionally);
+
+        }).addOnFailureListener(future::completeExceptionally);
+
+        return future;
+    }
+
+    public CompletableFuture<Void> leaveAlliance(@NonNull String allianceId) {
+        String me = requireUid();
+        CompletableFuture<Void> future = new CompletableFuture<>();
+
+        DocumentReference aRef = db.collection("alliances").document(allianceId);
+        aRef.get().addOnSuccessListener(aSnap -> {
+            if (!aSnap.exists()) { future.complete(null); return; }
+
+            String ownerUid = aSnap.getString("ownerUid");
+            boolean missionActive = Boolean.TRUE.equals(aSnap.getBoolean("missionActive"));
+
+            if (me.equals(ownerUid)) {
+                future.completeExceptionally(new IllegalStateException("Leader can not leave alliance. Leader can only disband alliance."));
+                return;
+            }
+            if (missionActive) {
+                future.completeExceptionally(new IllegalStateException("Mission is ongoing. You can not leave alliance."));
+                return;
+            }
+
+            WriteBatch batch = db.batch();
+            batch.update(db.collection("users").document(me), "allianceId", null);
+            batch.delete(aRef.collection("members").document(me));
+            batch.commit().addOnSuccessListener(unused -> future.complete(null))
+                    .addOnFailureListener(future::completeExceptionally);
+
+        }).addOnFailureListener(future::completeExceptionally);
+
+        return future;
+    }
+    public CompletableFuture<List<AllianceMember>>
+    loadMembers(String allianceId) {
+        CompletableFuture<List<AllianceMember>> f = new CompletableFuture<>();
+        DocumentReference aRef = db.collection("alliances").document(allianceId);
+
+        aRef.collection("members").get().addOnSuccessListener(memberSnaps -> {
+            List<CompletableFuture<AllianceMember>> perMember = new ArrayList<>();
+
+            for (com.google.firebase.firestore.DocumentSnapshot m : memberSnaps) {
+                String uid = m.getId();
+                String role = m.getString("role") != null ? m.getString("role") : "member";
+                com.google.firebase.Timestamp ts = m.getTimestamp("joinedAt");
+                long joinedAt = ts != null ? ts.toDate().getTime() : 0L;
+
+                CompletableFuture<AllianceMember> one = new CompletableFuture<>();
+                db.collection("users").document(uid).get()
+                        .addOnSuccessListener(userDoc -> {
+                            String username = userDoc.getString("username");
+                            if (username == null || username.isEmpty()) username = uid;
+                            String avatarKey = userDoc.getString("avatarKey"); // you already store this in profile
+                            one.complete(new AllianceMember(uid, username, avatarKey, role, joinedAt));
+                        })
+                        .addOnFailureListener(one::completeExceptionally);
+                perMember.add(one);
+            }
+
+            CompletableFuture
+                    .allOf(perMember.toArray(new CompletableFuture[0]))
+                    .thenAccept(v -> {
+                        List<AllianceMember> list = new ArrayList<>();
+                        for (var pm : perMember) {
+                            try { list.add(pm.get()); } catch (Exception ignored) {}
+                        }
+                        // Leader first, then by username
+                        list.sort((a, b) -> {
+                            int ra = "leader".equals(a.role) ? 0 : 1;
+                            int rb = "leader".equals(b.role) ? 0 : 1;
+                            if (ra != rb) return Integer.compare(ra, rb);
+                            return a.username.compareToIgnoreCase(b.username);
+                        });
+                        f.complete(list);
+                    })
+                    .exceptionally(ex -> { f.completeExceptionally(ex); return null; });
+
+        }).addOnFailureListener(f::completeExceptionally);
+
+        return f;
+    }
+
+}

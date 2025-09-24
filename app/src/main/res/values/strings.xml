@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">HabibiTar</string>
+    <string name="menu_friends">Friends</string>
+    <string name="nav_open">Open navigation drawer</string>
+    <string name="nav_close">Close navigation drawer</string>
+
 </resources>
