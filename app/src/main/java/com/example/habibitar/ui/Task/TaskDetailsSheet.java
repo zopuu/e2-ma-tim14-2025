@@ -86,6 +86,20 @@ public class TaskDetailsSheet extends BottomSheetDialogFragment {
         s.show(fm, TAG);
     }
 
+    // TaskDetailsSheet.java (dodaj kao private metodu u klasu)
+    private int xpFromEnumName(@Nullable Enum<?> e) {
+        if (e == null) return 0;
+        java.util.regex.Matcher m = java.util.regex.Pattern
+                .compile("(\\d+)")
+                .matcher(e.name());
+        return m.find() ? Integer.parseInt(m.group(1)) : 0;
+    }
+
+    private int taskXp(@NonNull com.example.habibitar.domain.model.Task t) {
+        return xpFromEnumName(t.getDifficulty()) + xpFromEnumName(t.getImportance());
+    }
+
+
     @Nullable @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.task_popup_details, container, false);
@@ -175,12 +189,59 @@ public class TaskDetailsSheet extends BottomSheetDialogFragment {
             int pos = spStatus.getSelectedItemPosition();
             TaskStatus newStatus = enumValues[Math.max(0, Math.min(pos, enumValues.length - 1))];
 
+            // bio je FINISHED?
+            boolean wasFinished = "FINISHED".equals(b.getString("status", ""));
+
             btnSaveStatus.setEnabled(false);
+
             repo.updateStatus(taskId, newStatus)
-                    .thenAccept(x -> requireActivity().runOnUiThread(() -> {
+                    .thenCompose(x -> {
+                        // dodela XP samo ako ranije nije bio FINISHED, a sada jeste
+                        if (!wasFinished && newStatus == TaskStatus.FINISHED) {
+                            // Proveri xpGranted na dokumentu da izbegneš dupli XP
+                            com.google.firebase.firestore.FirebaseFirestore db =
+                                    com.google.firebase.firestore.FirebaseFirestore.getInstance();
+
+                            return repo.getById(taskId)
+                                    .thenCompose(task -> {
+                                        // ako task nije pronađen
+                                        if (task == null) return java.util.concurrent.CompletableFuture.completedFuture(null);
+
+                                        String ownerId = task.getOwnerId();
+                                        // prvo proveri xpGranted na sirovom snapu
+                                        java.util.concurrent.CompletableFuture<Void> chain = new java.util.concurrent.CompletableFuture<>();
+                                        db.collection("tasks").document(taskId).get()
+                                                .addOnSuccessListener(snap -> {
+                                                    Boolean xpGranted = snap.getBoolean("xpGranted");
+                                                    if (Boolean.TRUE.equals(xpGranted)) {
+                                                        // već dodeljeno
+                                                        chain.complete(null);
+                                                        return;
+                                                    }
+                                                    int xp = taskXp(task); // difficulty + importance
+                                                    // 1) uvećaj XP korisniku
+                                                    new com.example.habibitar.data.user.UserRepository()
+                                                            .incrementXp(ownerId, xp)
+                                                            // 2) obeleži xpGranted = true na tasku
+                                                            .thenCompose(ignored ->
+                                                                    repo.updateTask(taskId,
+                                                                            java.util.Collections.singletonMap("xpGranted", true)
+                                                                    )
+                                                            )
+                                                            .thenAccept(ignored -> chain.complete(null))
+                                                            .exceptionally(ex -> { chain.completeExceptionally(ex); return null; });
+                                                })
+                                                .addOnFailureListener(chain::completeExceptionally);
+                                        return chain;
+                                    });
+                        }
+                        // u svim drugim slučajevima nema dodatne akcije
+                        return java.util.concurrent.CompletableFuture.completedFuture(null);
+                    })
+                    .thenAccept(ignored -> requireActivity().runOnUiThread(() -> {
                         Toast.makeText(requireContext(), "Status updated.", Toast.LENGTH_SHORT).show();
                         btnSaveStatus.setEnabled(true);
-                        dismiss(); 
+                        dismiss();
                     }))
                     .exceptionally(ex -> {
                         requireActivity().runOnUiThread(() -> {
@@ -190,6 +251,7 @@ public class TaskDetailsSheet extends BottomSheetDialogFragment {
                         return null;
                     });
         });
+
 
         btnDelete.setOnClickListener(view -> {
             String taskId = b.getString("taskId", null);
