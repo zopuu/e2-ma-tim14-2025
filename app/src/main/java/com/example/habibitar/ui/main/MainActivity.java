@@ -173,6 +173,9 @@ public class MainActivity extends AppCompatActivity implements com.google.androi
         } else if(id == R.id.nav_all_categories)
         {
             startActivity(new Intent(this, com.example.habibitar.ui.Task.AllTasksActivity.class));
+        } else if(id == R.id.nav_boss_fight)
+        {
+            startActivity(new Intent(this, com.example.habibitar.ui.bossFight.BossFightActivity.class));
         }
 
         DrawerLayout drawer = findViewById(R.id.drawer_layout);

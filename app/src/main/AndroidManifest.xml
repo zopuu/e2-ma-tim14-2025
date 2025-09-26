@@ -70,7 +70,10 @@
             android:name=".ui.Task.AllTasksActivity"
             android:exported="false"
             android:label="All tasks"/>
-
+        <activity
+            android:name=".ui.bossFight.BossFightActivity"
+            android:exported="false"
+            android:label="Boss fight"/>
         <receiver
             android:name=".notify.AllianceInviteActionReceiver"
             android:exported="false" />

@@ -20,4 +20,8 @@
         android:id="@+id/nav_all_categories"
         android:title="All tasks"
         android:icon="@drawable/outline_ballot_24"/>
+    <item
+        android:id="@+id/nav_boss_fight"
+        android:title="Boss fight"
+        android:icon="@drawable/outline_blind_24"/>
 </menu>
