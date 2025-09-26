@@ -108,7 +108,14 @@ public class ProfileActivity extends AppCompatActivity implements ProfilePresent
         tvLevelTitle.setText("Level " + p.level + " • " + title);
 
         // public
-        tvXP.setText(String.valueOf(p.xp));
+        // compute XP progress within this level
+        int currentXp = p.xp;             // remainder in this level
+        int level = p.level > 0 ? p.level : 1;
+        int nextReq = com.example.habibitar.domain.logic.LevelEngine.requiredXpForNextLevel(level);
+
+        // Show "current / needed"
+        tvXP.setText(currentXp + " / " + nextReq);
+
         tvBadgesCount.setText(String.valueOf(p.badges != null ? p.badges.size() : 0));
         badgesAdapter.submit(p.badges);
         tvCurrentEquipment.setText(p.currentEquipment == null ? "None" : p.currentEquipment);
