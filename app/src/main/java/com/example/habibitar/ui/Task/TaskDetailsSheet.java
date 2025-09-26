@@ -1,6 +1,7 @@
 package com.example.habibitar.ui.Task;
 
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -24,6 +25,8 @@ import com.example.habibitar.domain.model.enums.Importance;
 import com.example.habibitar.domain.model.enums.RepetitionUnits;
 import com.example.habibitar.domain.model.enums.TaskStatus;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.text.SimpleDateFormat;
 import java.util.Locale;
@@ -31,6 +34,9 @@ import java.util.Locale;
 public class TaskDetailsSheet extends BottomSheetDialogFragment {
     public static final String TAG = "TaskDetailsSheet";
     private final SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+
+    FirebaseFirestore db = FirebaseFirestore.getInstance();
+
 
     private String labelDifficulty(@Nullable Difficulty d) {
         if (d == null) return "-";
@@ -204,36 +210,80 @@ public class TaskDetailsSheet extends BottomSheetDialogFragment {
 
                             return repo.getById(taskId)
                                     .thenCompose(task -> {
-                                        // ako task nije pronađen
                                         if (task == null) return java.util.concurrent.CompletableFuture.completedFuture(null);
 
                                         String ownerId = task.getOwnerId();
-                                        // prvo proveri xpGranted na sirovom snapu
+                                        if (ownerId == null || ownerId.isEmpty()) {
+                                            // no owner -> nothing to award
+                                            return java.util.concurrent.CompletableFuture.completedFuture(null);
+                                        }
+
                                         java.util.concurrent.CompletableFuture<Void> chain = new java.util.concurrent.CompletableFuture<>();
+
                                         db.collection("tasks").document(taskId).get()
                                                 .addOnSuccessListener(snap -> {
                                                     Boolean xpGranted = snap.getBoolean("xpGranted");
                                                     if (Boolean.TRUE.equals(xpGranted)) {
-                                                        // već dodeljeno
+                                                        // already granted
                                                         chain.complete(null);
                                                         return;
                                                     }
-                                                    int xp = taskXp(task); // difficulty + importance
-                                                    // 1) uvećaj XP korisniku
-                                                    new com.example.habibitar.data.user.UserRepository()
-                                                            .incrementXp(ownerId, xp)
-                                                            // 2) obeleži xpGranted = true na tasku
-                                                            .thenCompose(ignored ->
-                                                                    repo.updateTask(taskId,
-                                                                            java.util.Collections.singletonMap("xpGranted", true)
-                                                                    )
-                                                            )
-                                                            .thenAccept(ignored -> chain.complete(null))
-                                                            .exceptionally(ex -> { chain.completeExceptionally(ex); return null; });
+
+                                                    // compute base parts from enums
+                                                    int baseDifficulty = xpFromEnumName(task.getDifficulty());   // 1/3/7/20
+                                                    int baseImportance = xpFromEnumName(task.getImportance());   // 1/3/10/100
+
+                                                    // read BEFORE to compute scaled XP for the dialog
+                                                    DocumentReference userDoc = db.collection("users").document(ownerId);
+                                                    userDoc.get().addOnSuccessListener(before -> {
+                                                        int oldLevel = before.getLong("level") != null ? before.getLong("level").intValue() : 1;
+                                                        int oldXp    = before.getLong("xp")    != null ? before.getLong("xp").intValue()    : 0;
+                                                        int oldPp    = before.getLong("pp")    != null ? before.getLong("pp").intValue()    : 0;
+
+                                                        int taskScaledXp = com.example.habibitar.domain.logic.LevelEngine
+                                                                .totalTaskXpAtLevel(baseDifficulty, baseImportance, oldLevel);
+
+                                                        // atomic XP+level update
+                                                        new com.example.habibitar.data.user.UserRepository()
+                                                                .incrementXpWithLeveling(ownerId, baseDifficulty, baseImportance)
+                                                                .thenRun(() -> {
+                                                                    // mark xpGranted to avoid duplicates
+                                                                    db.collection("tasks").document(taskId).update("xpGranted", true);
+
+                                                                    // AFTER snapshot for final numbers
+                                                                    userDoc.get().addOnSuccessListener(after -> {
+                                                                        int newLevel = after.getLong("level") != null ? after.getLong("level").intValue() : oldLevel;
+                                                                        int newXp    = after.getLong("xp")    != null ? after.getLong("xp").intValue()    : oldXp;
+                                                                        int newPp    = after.getLong("pp")    != null ? after.getLong("pp").intValue()    : oldPp;
+
+                                                                        if (getContext() != null) {
+                                                                            showLevelXpDialog(
+                                                                                    getContext(),
+                                                                                    taskScaledXp,
+                                                                                    oldLevel, newLevel,
+                                                                                    oldXp, newXp,
+                                                                                    oldPp, newPp
+                                                                            );
+                                                                        }
+
+                                                                        // ✅ complete the chain so outer thenAccept runs
+                                                                        chain.complete(null);
+                                                                    }).addOnFailureListener(chain::completeExceptionally);
+                                                                })
+                                                                .exceptionally(err -> {
+                                                                    if (getContext() != null) {
+                                                                        android.widget.Toast.makeText(getContext(), "Failed to apply XP: " + err.getMessage(), android.widget.Toast.LENGTH_LONG).show();
+                                                                    }
+                                                                    chain.completeExceptionally(err);
+                                                                    return null;
+                                                                });
+                                                    }).addOnFailureListener(chain::completeExceptionally);
                                                 })
                                                 .addOnFailureListener(chain::completeExceptionally);
-                                        return chain;
+
+                                        return chain;   // return the future that completes after dialog is shown
                                     });
+
                         }
                         // u svim drugim slučajevima nema dodatne akcije
                         return java.util.concurrent.CompletableFuture.completedFuture(null);
@@ -340,4 +390,29 @@ public class TaskDetailsSheet extends BottomSheetDialogFragment {
         v.findViewById(R.id.btnClose).setOnClickListener(view -> dismiss());
         return v;
     }
+    private void showLevelXpDialog(
+            @NonNull Context context,
+            int taskScaledXp,
+            int oldLevel, int newLevel,
+            int oldXp, int newXp,
+            int oldPp, int newPp
+    ) {
+        int ppGained = Math.max(0, newPp - oldPp);
+        int nextReq  = com.example.habibitar.domain.logic.LevelEngine.requiredXpForNextLevel(newLevel);
+
+        StringBuilder msg = new StringBuilder();
+        msg.append("XP gained: +").append(taskScaledXp).append("\n");
+        if (newLevel > oldLevel) {
+            msg.append("Level Up! ").append(oldLevel).append(" → ").append(newLevel).append("\n");
+            if (ppGained > 0) msg.append("PP gained: +").append(ppGained).append("\n");
+        }
+        msg.append("Current XP: ").append(newXp).append(" / ").append(nextReq);
+
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(context)
+                .setTitle("Task Completed")
+                .setMessage(msg.toString())
+                .setPositiveButton("OK", (d, w) -> d.dismiss())
+                .show();
+    }
+
 }

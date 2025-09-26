@@ -76,6 +76,9 @@
             android:exported="false" />
 
         <activity android:name=".ui.Task.TaskEditActivity" />
+        <activity android:name=".ui.levels.LevelProgressActivity"
+            android:exported="false" />
+
 
         <service
             android:name=".notify.InviteForegroundService"
