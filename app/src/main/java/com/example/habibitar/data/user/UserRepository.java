@@ -99,4 +99,39 @@ public class UserRepository {
         }).addOnSuccessListener(v -> f.complete(null)).addOnFailureListener(f::completeExceptionally);
         return f;
     }
+
+    // u com.example.habibitar.data.user.UserRepository
+    public CompletableFuture<Void> incrementCoins(String userId, int delta) {
+        CompletableFuture<Void> fut = new CompletableFuture<>();
+        if (userId == null || userId.isEmpty() || delta <= 0) { fut.complete(null); return fut; }
+        db.collection("users").document(userId)
+                .update("coins", com.google.firebase.firestore.FieldValue.increment(delta))
+                .addOnSuccessListener(v -> fut.complete(null))
+                .addOnFailureListener(fut::completeExceptionally);
+        return fut;
+    }
+
+    public CompletableFuture<Void> incrementBossLevel(String userId, int delta) {
+        CompletableFuture<Void> fut = new CompletableFuture<>();
+        if (userId == null || userId.isEmpty() || delta == 0) { fut.complete(null); return fut; }
+        db.collection("users").document(userId)
+                .update("bossLevel", com.google.firebase.firestore.FieldValue.increment(delta))
+                .addOnSuccessListener(v -> fut.complete(null))
+                .addOnFailureListener(fut::completeExceptionally);
+        return fut;
+    }
+
+    public CompletableFuture<Void> appendEquipmentItem(String userId, String itemName) {
+        CompletableFuture<Void> fut = new CompletableFuture<>();
+        if (userId == null || userId.isEmpty() || itemName == null || itemName.trim().isEmpty()) {
+            fut.complete(null);
+            return fut;
+        }
+        db.collection("users").document(userId)
+                .update("equipment", com.google.firebase.firestore.FieldValue.arrayUnion(itemName))
+                .addOnSuccessListener(v -> fut.complete(null))
+                .addOnFailureListener(fut::completeExceptionally);
+        return fut;
+    }
+
 }

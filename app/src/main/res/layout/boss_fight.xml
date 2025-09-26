@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="0dp"
+        android:layout_height="?attr/actionBarSize"
+        app:title="Borba sa bosom"
+        app:navigationIcon="?attr/homeAsUpIndicator"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <ImageView
+        android:id="@+id/ivBoss"
+        android:layout_width="220dp"
+        android:layout_height="220dp"
+        android:layout_marginTop="16dp"
+        android:src="@mipmap/ic_launcher"
+        android:contentDescription="@string/boss_image"
+        app:layout_constraintTop_toBottomOf="@id/toolbar"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardRewards"
+        android:layout_width="0dp"
+        android:layout_height="220dp"
+        android:layout_marginStart="12dp"
+        app:layout_constraintTop_toTopOf="@id/ivBoss"
+        app:layout_constraintBottom_toBottomOf="@id/ivBoss"
+        app:layout_constraintStart_toEndOf="@id/ivBoss"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <TextView
+                android:id="@+id/tvRewardsTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Potencijalne nagrade"
+                android:textStyle="bold"
+                android:textSize="14sp"/>
+
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:fadeScrollbars="false">
+
+                <TextView
+                    android:id="@+id/tvRewardsList"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="—"
+                    android:textSize="13sp"/>
+            </ScrollView>
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <TextView
+        android:id="@+id/tvBossHpText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="HP: 200/200"
+        android:textStyle="bold"
+        android:textSize="16sp"
+        android:layout_marginTop="8dp"
+        app:layout_constraintTop_toBottomOf="@id/ivBoss"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <com.google.android.material.progressindicator.LinearProgressIndicator
+        android:id="@+id/hpBar"
+        android:layout_width="0dp"
+        android:layout_height="18dp"
+        android:layout_marginTop="6dp"
+        android:max="200"
+        android:progress="200"
+        app:indicatorColor="@android:color/holo_red_dark"
+        app:trackColor="@android:color/darker_gray"
+        app:layout_constraintTop_toBottomOf="@id/tvBossHpText"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <TextView
+        android:id="@+id/tvAttacksLeft"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Preostali napadi: 5/5"
+        android:textSize="15sp"
+        android:layout_marginTop="12dp"
+        app:layout_constraintTop_toBottomOf="@id/hpBar"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <TextView
+        android:id="@+id/tvUserPP"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="PP: --"
+        android:textSize="15sp"
+        android:layout_marginTop="12dp"
+        app:layout_constraintTop_toBottomOf="@id/hpBar"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnAttack"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Napadni"
+        android:layout_marginTop="18dp"
+        app:layout_constraintTop_toBottomOf="@id/tvAttacksLeft"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Toggle button for showing/hiding user's equipment -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnActivateEquipment"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Activate equipment"
+        android:layout_marginTop="16dp"
+        app:layout_constraintTop_toBottomOf="@id/btnAttack"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <TextView
+        android:id="@+id/tvMyItemsTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Tvoja oprema"
+        android:textStyle="bold"
+        android:layout_marginTop="16dp"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/btnActivateEquipment"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <ScrollView
+        android:id="@+id/svMyItems"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="8dp"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/tvMyItemsTitle"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <TextView
+            android:id="@+id/tvMyItemsList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="— još nemaš opremu —"
+            android:textSize="14sp"
+            android:paddingBottom="12dp"/>
+    </ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
